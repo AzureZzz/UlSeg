@@ -18,3 +18,22 @@ The experimental results are as follows：
 |   √    |      |   √    |   √   |   0.8486418   |   0.7693327   |   0.8862817   |   0.8160666   |
 |   √    |  √   |   √    |   √   | **0.8600747** | **0.7826157** | **0.8909538** | **0.8200555** |
 
+***
+## How to use?
+1.Preparing your dataset.
+
+├── dataset
+│   ├── our_large
+│   │   └── preprocessed
+│   │       ├── stage1
+|   |       |   ├── image
+|   |       |   └── mask
+│   │       ├── stage2
+|   |       |   ├── image
+|   |       |   └── mask
+│   │       └── train.csv
+
+
+2.Run train_val.py.
+
+3.Run test.py.

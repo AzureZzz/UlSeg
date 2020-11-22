@@ -23,14 +23,23 @@ The experimental results are as follows：
 1.Preparing your dataset.
 
 ├── dataset
-│   ├── our_large
+
+│   ├── your_dataset
+
 │   │   └── preprocessed
+
 │   │       ├── stage1
+
 |   |       |   ├── image
+
 |   |       |   └── mask
+
 │   │       ├── stage2
+
 |   |       |   ├── image
+
 |   |       |   └── mask
+
 │   │       └── train.csv
 
 

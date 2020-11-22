@@ -22,27 +22,6 @@ The experimental results are as follows：
 ## How to use?
 1.Preparing your dataset.
 
-├── dataset
-
-│   ├── your_dataset
-
-│   │   └── preprocessed
-
-│   │       ├── stage1
-
-|   |       |   ├── image
-
-|   |       |   └── mask
-
-│   │       ├── stage2
-
-|   |       |   ├── image
-
-|   |       |   └── mask
-
-│   │       └── train.csv
-
-
 2.Run train_val.py.
 
 3.Run test.py.

@@ -22,7 +22,7 @@ def main(config):
     cudnn.benchmark = True
     now = datetime.now().strftime('%Y_%m_%d-%H-%M')
     # config.result_path = os.path.join(config.result_path, config.Task_name + '_' + now)
-    config.result_path = os.path.join(config.result_path, 'stage2')
+    config.result_path = os.path.join(config.result_path, config.Task_name)
     logging.info(config.result_path)
     config.model_path = os.path.join(config.result_path, 'models')
     config.log_dir = os.path.join(config.result_path, 'logs')
@@ -171,7 +171,7 @@ if __name__ == '__main__':
     # misc
     parser.add_argument('--mode', type=str, default='train', help='train/test')
     parser.add_argument('--tta_mode', type=bool, default=True)  # 是否在训练过程中的validation使用tta
-    parser.add_argument('--Task_name', type=str, default='test', help='DIR name,Task name')
+    parser.add_argument('--Task_name', type=str, default=stage, help='DIR name,Task name')
     parser.add_argument('--cuda_idx', type=int, default=1)
     parser.add_argument('--DataParallel', type=bool, default=True)  ##
     # data-parameters

@@ -114,7 +114,7 @@ if __name__ == '__main__':
     mask_path = r'dataset/our_large/preprocessed/stage1/p_mask'
     csv_file = r'dataset/our_large/preprocessed/train.csv'
     save_path = None
-    show_plt = False
+    show_plt = True
 
     # 是否使用设定好的分折信息
     fold_flag = True  # 预测测试集则设置为False直接读取img_path中PNG文件进行测试,True则使用分折信息
@@ -190,7 +190,7 @@ if __name__ == '__main__':
         # 指标
         IOU_list = []
         DSC_list = []
-        ioumin3 = 0
+        remove_list = []
         i = 1
         with tqdm(total=len(test_img_list), desc=f'Test images {i}/{len(test_img_list)}', unit='image') as pbar:
             for index, img_file in enumerate(test_img_list):
@@ -269,13 +269,14 @@ if __name__ == '__main__':
                     final_mask = final_mask.astype(np.float32)
                     # print(np.unique(final_mask))
                     # print(np.sum(final_mask))
-
+                    iou=0.
                     # 如果有GT的话，计算指标
                     if mask_path is not None:
-                        if getIOU(final_mask, GT_array) < 0.3:
-                            ioumin3 = ioumin3 + 1
+                        iou = getIOU(final_mask, GT_array)
                         IOU_list.append(getIOU(final_mask, GT_array))
                         # print('IOU:', getIOU(final_mask, GT_array))
+                        if getIOU(final_mask, GT_array) <= 0.4:
+                            remove_list.append(img_file.split('/')[-1])
                         IOU_final = np.mean(IOU_list)
                         # print('fold:', fold_index, '  IOU_final', IOU_final)
 
@@ -293,32 +294,42 @@ if __name__ == '__main__':
                         final_savepath = save_path + sep + img_file.split(sep)[-1]
                         im = Image.fromarray(final_mask)
                         im.save(final_savepath)
-                    if show_plt:
-                        plt.subplot(1, 3, 1)
+                    if show_plt and iou <= 0.4:
+                        plt.subplot(2, 2, 1)
                         plt.title('pred')
                         plt.imshow(final_mask, cmap=plt.cm.gray)
                         # plt.subplot(1, 2, 2)
                         # plt.imshow(img_array,cmap=plt.cm.gray)
-                        plt.subplot(1, 3, 2)
+                        plt.subplot(2, 2, 2)
                         plt.title('ground true')
                         plt.imshow(GT_array, cmap=plt.cm.gray)
-                        plt.subplot(1, 3, 3)
+                        plt.subplot(2, 2, 3)
                         plt.title('image')
                         # plt.imshow(np.array(Image.fromarray(img.to('cpu').numpy()[0][0]).resize((or_shape[1], or_shape[0]))),
                         #            cmap=plt.cm.gray)
                         plt.imshow(np.array(Image.open(img_file)), cmap=plt.cm.gray)
+                        plt.subplot(2, 2, 4)
+                        plt.title('cut image')
+                        plt.imshow(img_array_roi, cmap=plt.cm.gray)
+                        plt.suptitle(img_file.split('/')[-1])
                         plt.show()
                     pbar.set_postfix(
                         **{'IoU': IOU_final, 'DSC': DSC_final, 'image': img_file.split('/')[-1], 'c1': c1_size, 'c2': c1_size})
                     pbar.update()
 
+    before_len = len(IOU_list)
     print('Before screen:')
+    print(char_color(f'Number:{before_len}'))
     print(char_color(f'Final IoU:{np.mean(IOU_list)}'))
     print(char_color(f'Final Dice:{np.mean(DSC_list)}'))
     IOU_list = [x for x in IOU_list if x > 0.4]
     DSC_list = [x for x in DSC_list if x > 0.4]
+    after_len = len(IOU_list)
     print('After screen:')
+    print(char_color(f'Number:{after_len}'))
+    print(char_color(f'Final Dice:{np.mean(DSC_list)}'))
     print(char_color(f'Final IoU:{np.mean(IOU_list)}', word=34))
     print(char_color(f'Final Dice:{np.mean(DSC_list)}', word=34))
-    # print(ioumin3)
+    print()
+    print(remove_list)
     # input()

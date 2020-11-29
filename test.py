@@ -114,7 +114,7 @@ if __name__ == '__main__':
     mask_path = r'dataset/our_large/preprocessed/stage1/p_mask'
     csv_file = r'dataset/our_large/preprocessed/train.csv'
     save_path = None
-    show_plt = True
+    show_plt = False
 
     # 是否使用设定好的分折信息
     fold_flag = True  # 预测测试集则设置为False直接读取img_path中PNG文件进行测试,True则使用分折信息
@@ -125,8 +125,13 @@ if __name__ == '__main__':
     task_name = r' '
 
     # cascade参数
-    weight_c1 = r'result/our_large/stage1/models/best_unet_score.pkl'
-    weight_c2 = r'result/our_large/stage2/models/best_unet_score.pkl'
+    # weight_c1 = r'result/our_large/stage1-B6/models/best_unet_score.pkl' # B6
+    # weight_c1 = r'result/our_large/stage1-B7/models/best_unet_score.pkl' # B7
+    # weight_c1 = r'result/our_large_GAN_B6/models/best_model_G.pth' # B6-GAN
+    weight_c1 = r'result/our_large_GAN_B7/models/best_model_G.pth' # B7-GAN
+
+    # weight_c2 = r'result/our_large/stage2-B6/models/best_unet_score.pkl'
+    weight_c2 = r'result/our_large/stage2-B7/models/best_unet_score.pkl'
 
     c1_tta, use_c2_flag, c2_tta = True, True, True
 
@@ -167,7 +172,7 @@ if __name__ == '__main__':
         ])
         # 构建模型
         # cascade1
-        model_cascade1 = smp.DeepLabV3Plus(encoder_name="efficientnet-b6", encoder_weights=None, in_channels=1,
+        model_cascade1 = smp.DeepLabV3Plus(encoder_name="efficientnet-b7", encoder_weights=None, in_channels=1,
                                            classes=1)
         model_cascade1.to(device)
         model_cascade1 = torch.nn.DataParallel(model_cascade1)
@@ -176,7 +181,7 @@ if __name__ == '__main__':
             model_cascade1 = tta.SegmentationTTAWrapper(model_cascade1, tta_trans, merge_mode='mean')
         model_cascade1.eval()
         # cascade2
-        model_cascade2 = smp.DeepLabV3Plus(encoder_name="efficientnet-b6", encoder_weights=None, in_channels=1,
+        model_cascade2 = smp.DeepLabV3Plus(encoder_name="efficientnet-b7", encoder_weights=None, in_channels=1,
                                            classes=1)
         # model_cascade2 = smp.Unet(encoder_name="efficientnet-b6", encoder_weights=None, in_channels=1, classes=1, encoder_depth=5, decoder_attention_type='scse')
         # model_cascade2 = smp.PAN(encoder_name="efficientnet-b6",encoder_weights='imagenet',	in_channels=1, classes=1)
@@ -221,7 +226,8 @@ if __name__ == '__main__':
                         mask_c1_array = (mask_c1_array > 0.5)
                         mask_c1_array = mask_c1_array.astype(np.float32)
                         # 获取最大联通域
-                        mask_c1_array_biggest = largestConnectComponent(mask_c1_array.astype(np.int))
+                        # mask_c1_array_biggest = largestConnectComponent(mask_c1_array.astype(np.int))
+                        mask_c1_array_biggest = mask_c1_array.astype(np.int)
                         # print("c1 outputsize:", mask_c1_array_biggest.shape)
 
                     """过一遍cascade2"""
@@ -314,7 +320,7 @@ if __name__ == '__main__':
                         plt.suptitle(img_file.split('/')[-1])
                         plt.show()
                     pbar.set_postfix(
-                        **{'IoU': IOU_final, 'DSC': DSC_final, 'image': img_file.split('/')[-1], 'c1': c1_size, 'c2': c1_size})
+                        **{'IoU': IOU_final, 'DSC': DSC_final, 'image': img_file.split('/')[-1], 'c1': c1_size, 'c2': c2_size})
                     pbar.update()
 
     before_len = len(IOU_list)
@@ -327,7 +333,6 @@ if __name__ == '__main__':
     after_len = len(IOU_list)
     print('After screen:')
     print(char_color(f'Number:{after_len}'))
-    print(char_color(f'Final Dice:{np.mean(DSC_list)}'))
     print(char_color(f'Final IoU:{np.mean(IOU_list)}', word=34))
     print(char_color(f'Final Dice:{np.mean(DSC_list)}', word=34))
     print()

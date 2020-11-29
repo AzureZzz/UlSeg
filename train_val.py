@@ -36,9 +36,9 @@ def main(config):
         os.makedirs(config.log_dir)
         os.makedirs(os.path.join(config.result_path, 'image'))
 
+    os.environ["CUDA_VISIBLE_DEVICES"] = config.cuda_ids
     if not config.DataParallel:
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(config.cuda_idx)
 
     f = open(os.path.join(config.result_path, 'config.txt'), 'w')
     for key in config.__dict__:
@@ -139,20 +139,20 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     dataset = 'our_large'
-    stage = 'stage2'
+    stage = 'stage1'
     # model hyper-parameters
-    parser.add_argument('--image_size', type=int, default=512)  # 网络输入img的size, 即输入会被强制resize到这个大小
+    parser.add_argument('--image_size', type=int, default=256)  # 网络输入img的size, 即输入会被强制resize到这个大小
 
     # training hyper-parameters
     parser.add_argument('--img_ch', type=int, default=1)
     parser.add_argument('--output_ch', type=int, default=1)
-    parser.add_argument('--num_epochs', type=int, default=200)
+    parser.add_argument('--num_epochs', type=int, default=100)
 
     parser.add_argument('--num_epochs_decay', type=int, default=60)  # decay开始的最小epoch数
     parser.add_argument('--decay_ratio', type=float, default=0.01)  # 0~1,每次decay到1*ratio
     parser.add_argument('--decay_step', type=int, default=60)  # epoch
 
-    parser.add_argument('--batch_size', type=int, default=4)
+    parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--batch_size_test', type=int, default=30)
     parser.add_argument('--num_workers', type=int, default=3)
 
@@ -175,8 +175,8 @@ if __name__ == '__main__':
     # misc
     parser.add_argument('--mode', type=str, default='train', help='train/test')
     parser.add_argument('--tta_mode', type=bool, default=True)  # 是否在训练过程中的validation使用tta
-    parser.add_argument('--Task_name', type=str, default=stage, help='DIR name,Task name')
-    parser.add_argument('--cuda_idx', type=int, default=1)
+    parser.add_argument('--Task_name', type=str, default=stage+'-B6', help='DIR name,Task name')
+    parser.add_argument('--cuda_ids', type=str, default='0,1')
     parser.add_argument('--DataParallel', type=bool, default=True)  ##
     # data-parameters
     parser.add_argument('--filepath_img', type=str, default=f'dataset/{dataset}/preprocessed/{stage}/p_image')

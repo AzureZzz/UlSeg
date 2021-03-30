@@ -26,6 +26,8 @@ The experimental results are as follows：
 
 3.Run test.py.
 
+## GAN test result
+
 
 | StageⅠ | StageⅡ |    DsC     |    IoU     |   DsC β    |   IoU β    | filter n |
 | :----: | :----: | :--------: | :--------: | :--------: | :--------: | :------: |

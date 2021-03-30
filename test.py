@@ -125,13 +125,14 @@ if __name__ == '__main__':
     task_name = r' '
 
     # cascade参数
-    # weight_c1 = r'result/our_large/stage1-B6/models/best_unet_score.pkl' # B6
+    weight_c1 = r'result/our_large/stage1-B6/models/best_unet_score.pkl' # B6
     # weight_c1 = r'result/our_large/stage1-B7/models/best_unet_score.pkl' # B7
     # weight_c1 = r'result/our_large_GAN_B6/models/best_model_G.pth' # B6-GAN
-    weight_c1 = r'result/our_large_GAN_B7/models/best_model_G.pth' # B7-GAN
+    # weight_c1 = r'result/our_large_GAN_B7/models/best_model_G.pth' # B7-GAN
 
-    # weight_c2 = r'result/our_large/stage2-B6/models/best_unet_score.pkl'
-    weight_c2 = r'result/our_large/stage2-B7/models/best_unet_score.pkl'
+    weight_c2 = r'result/our_large/stage2-B6/models/best_unet_score.pkl'
+    # weight_c2 = r'result/our_large/stage2-B7/models/best_unet_score.pkl'
+    # weight_c2 = r'result/our_large/beta/stage2-B6/models/best_unet_score.pkl'
 
     c1_tta, use_c2_flag, c2_tta = True, True, True
 
@@ -172,7 +173,7 @@ if __name__ == '__main__':
         ])
         # 构建模型
         # cascade1
-        model_cascade1 = smp.DeepLabV3Plus(encoder_name="efficientnet-b7", encoder_weights=None, in_channels=1,
+        model_cascade1 = smp.DeepLabV3Plus(encoder_name="efficientnet-b6", encoder_weights=None, in_channels=1,
                                            classes=1)
         model_cascade1.to(device)
         model_cascade1 = torch.nn.DataParallel(model_cascade1)
@@ -181,8 +182,10 @@ if __name__ == '__main__':
             model_cascade1 = tta.SegmentationTTAWrapper(model_cascade1, tta_trans, merge_mode='mean')
         model_cascade1.eval()
         # cascade2
-        model_cascade2 = smp.DeepLabV3Plus(encoder_name="efficientnet-b7", encoder_weights=None, in_channels=1,
-                                           classes=1)
+        # model_cascade2 = smp.DeepLabV3PlusBeta(encoder_name="efficientnet-b6", encoder_weights=None, in_channels=1,
+        #                                    classes=1)
+        model_cascade2 = smp.DeepLabV3Plus(encoder_name="efficientnet-b6", encoder_weights=None, in_channels=1,
+                                               classes=1)
         # model_cascade2 = smp.Unet(encoder_name="efficientnet-b6", encoder_weights=None, in_channels=1, classes=1, encoder_depth=5, decoder_attention_type='scse')
         # model_cascade2 = smp.PAN(encoder_name="efficientnet-b6",encoder_weights='imagenet',	in_channels=1, classes=1)
         model_cascade2.to(device)

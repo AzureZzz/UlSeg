@@ -21,8 +21,7 @@ class Unet(SegmentationModel):
             is used. If 'inplace' InplaceABN will be used, allows to decrease memory consumption.
             One of [True, False, 'inplace']
         decoder_attention_type: attention module used in decoder of the model
-            One of [``None``, ``scse``]
-        in_channels: number of input channels for model, default is 3.
+            One of [``None``, ``scse``]        in_channels: number of input channels for model, default is 3.
         classes: a number of classes for output (output shape - ``(batch, classes, h, w)``).
         activation: activation function to apply after final convolution;
             One of [``sigmoid``, ``softmax``, ``logsoftmax``, ``identity``, callable, None]

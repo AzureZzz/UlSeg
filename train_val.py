@@ -139,9 +139,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     dataset = 'our_large'
-    stage = 'stage1'
+    stage = 'stage2'
     # model hyper-parameters
-    parser.add_argument('--image_size', type=int, default=256)  # 网络输入img的size, 即输入会被强制resize到这个大小
+    parser.add_argument('--image_size', type=int, default=512)  # 网络输入img的size, 即输入会被强制resize到这个大小
 
     # training hyper-parameters
     parser.add_argument('--img_ch', type=int, default=1)
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     parser.add_argument('--decay_ratio', type=float, default=0.01)  # 0~1,每次decay到1*ratio
     parser.add_argument('--decay_step', type=int, default=60)  # epoch
 
-    parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--batch_size_test', type=int, default=30)
     parser.add_argument('--num_workers', type=int, default=3)
 
@@ -186,7 +186,7 @@ if __name__ == '__main__':
     parser.add_argument('--fold_idx', type=int, default=1)
 
     # result&save
-    parser.add_argument('--result_path', type=str, default=f'./result/{dataset}')
+    parser.add_argument('--result_path', type=str, default=f'./result/{dataset}/beta')
     parser.add_argument('--save_detail_result', type=bool, default=True)
     parser.add_argument('--save_image', type=bool, default=True)  # 训练过程中观察图像和结果
 

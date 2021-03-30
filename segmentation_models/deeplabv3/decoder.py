@@ -33,9 +33,27 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import torch
 from torch import nn
 from torch.nn import functional as F
+from attention.DANet import PAMModule
 
 __all__ = ["DeepLabV3Decoder"]
 
+class ChannelAttention(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(ChannelAttention, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.max_pool = nn.AdaptiveMaxPool2d(1)
+
+        self.fc1 = nn.Conv2d(in_channels, in_channels // 16, 1, bias=False)
+        self.relu1 = nn.ReLU()
+        self.fc2 = nn.Conv2d(in_channels // 16, out_channels, 1, bias=False)
+
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        avg_out = self.fc2(self.relu1(self.fc1(self.avg_pool(x))))
+        max_out = self.fc2(self.relu1(self.fc1(self.max_pool(x))))
+        out = avg_out + max_out
+        return self.sigmoid(out)
 
 class DeepLabV3Decoder(nn.Sequential):
     def __init__(self, in_channels, out_channels=256, atrous_rates=(12, 24, 36)):
@@ -103,6 +121,57 @@ class DeepLabV3PlusDecoder(nn.Module):
         fused_features = self.block2(concat_features)
         return fused_features
 
+class DeepLabV3PlusDecoderBeta(nn.Module):
+    def __init__(
+        self,
+        encoder_channels,
+        out_channels=256,
+        atrous_rates=(12, 24, 36),
+        output_stride=16,
+    ):
+        super().__init__()
+        if output_stride not in {8, 16}:
+            raise ValueError("Output stride should be 8 or 16, got {}.".format(output_stride))
+
+        self.out_channels = out_channels
+        self.output_stride = output_stride
+
+        self.aspp = nn.Sequential(
+            ASPPBeta(encoder_channels[-1], out_channels, atrous_rates, separable=True),
+            SeparableConv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(),
+        )
+
+        scale_factor = 2 if output_stride == 8 else 4
+        self.up = nn.UpsamplingBilinear2d(scale_factor=scale_factor)
+
+        highres_in_channels = encoder_channels[-4]
+        highres_out_channels = 48   # proposed by authors of paper
+        self.block1 = nn.Sequential(
+            nn.Conv2d(highres_in_channels, highres_out_channels, kernel_size=1, bias=False),
+            nn.BatchNorm2d(highres_out_channels),
+            nn.ReLU(),
+        )
+        self.block2 = nn.Sequential(
+            SeparableConv2d(
+                highres_out_channels + out_channels,
+                out_channels,
+                kernel_size=3,
+                padding=1,
+                bias=False,
+            ),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(),
+        )
+
+    def forward(self, *features):
+        aspp_features = self.aspp(features[-1])
+        aspp_features = self.up(aspp_features)
+        high_res_features = self.block1(features[-4])
+        concat_features = torch.cat([aspp_features, high_res_features], dim=1)
+        fused_features = self.block2(concat_features)
+        return fused_features
 
 class ASPPConv(nn.Sequential):
     def __init__(self, in_channels, out_channels, dilation):
@@ -186,7 +255,54 @@ class ASPP(nn.Module):
         for conv in self.convs:
             res.append(conv(x))
         res = torch.cat(res, dim=1)
-        return self.project(res)
+        res = self.project(res)
+        return res
+
+
+class ASPPBeta(nn.Module):
+    def __init__(self, in_channels, out_channels, atrous_rates, separable=False):
+        super(ASPPBeta, self).__init__()
+        modules = []
+        modules.append(
+            nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, 1, bias=False),
+                nn.BatchNorm2d(out_channels),
+                nn.ReLU(),
+            )
+        )
+
+        rate1, rate2, rate3 = tuple(atrous_rates)
+        ASPPConvModule = ASPPConv if not separable else ASPPSeparableConv
+
+        modules.append(ASPPConvModule(in_channels, out_channels, rate1))
+        modules.append(ASPPConvModule(in_channels, out_channels, rate2))
+        modules.append(ASPPConvModule(in_channels, out_channels, rate3))
+        modules.append(ASPPPooling(in_channels, out_channels))
+        PAM = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, 1, bias=False),
+                PAMModule(out_channels)
+            )
+        modules.append(PAM)
+
+        self.convs = nn.ModuleList(modules)
+
+        self.project = nn.Sequential(
+            nn.Conv2d(6 * out_channels, out_channels, kernel_size=1, bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+        )
+        self.CAM = ChannelAttention(in_channels,out_channels)
+
+    def forward(self, x):
+        ca = self.CAM(x)
+        res = []
+        for conv in self.convs:
+            res.append(conv(x))
+        res = torch.cat(res, dim=1)
+        res = self.project(res)*ca
+        return res
+
 
 
 class SeparableConv2d(nn.Sequential):
